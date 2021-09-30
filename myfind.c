@@ -14,6 +14,7 @@
 #ifndef DT_DIR
 #define DT_DIR 4 //Redefine DT_DIR, to avoid red underlines
 #endif
+#define MAX_PATH 255
 
 int flag_R = 0;
 int flag_i = 0; 
@@ -109,8 +110,8 @@ void SimpleFind(char* path, char** files, int fileCount){
                 if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
                     //Change to current directory  
                     chdir(path); 
-                    char cwd[255]; 
-                    printf("<pid>: %s: %s\n", files[i], getcwd(cwd, 255)); 
+                    char cwd[MAX_PATH]; 
+                    printf("<pid>: %s: %s\n", dirEntry->d_name, getcwd(cwd, MAX_PATH)); 
                 }
             }
         } 
@@ -120,5 +121,35 @@ void SimpleFind(char* path, char** files, int fileCount){
 }
 
 void RecursiveFind(char* path, char** files, int fileCount){
-    
+    struct dirent *dirEntry;
+    DIR *dir; 
+
+    if((dir = opendir(path)) == NULL){
+        printf("Failed to open directory\n");
+        return;
+    } 
+
+    while((dirEntry = readdir(dir)) != NULL){
+        // only check files
+        if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..")){  
+            if(dirEntry->d_type == DT_DIR){ 
+                strcpy(path, dirEntry->d_name); 
+                strcat(path, "/"); 
+
+                RecursiveFind(path, files, fileCount);   
+            }else{
+                for(int i = 0; i < fileCount; i++){
+                    //Check if flag -i is set
+                    if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
+                        //Change to current directory  
+                        chdir(path); 
+                        char cwd[MAX_PATH]; 
+                        printf("<pid>: %s: %s\n", dirEntry->d_name, getcwd(cwd, MAX_PATH)); 
+                    }
+                }
+            }
+        } 
+    } 
+    free(dir);
+    free(dirEntry);
 }
