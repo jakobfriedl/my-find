@@ -1,19 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <getopt.h>
-#include <unistd.h>
-#include <assert.h>
-#include <string.h>
-#include <strings.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <errno.h>
+#include "myfind.h"
 
-#ifndef DT_DIR
-#define DT_DIR 4 //Redefine DT_DIR, to avoid red underlines
-#endif
+#define IS_DIR 4 // dirent.h DT_DIR not recognized
 #define MAX_PATH 255
 
 int flag_R = 0;
@@ -21,7 +8,6 @@ int flag_i = 0;
 
 void PrintUsage();
 void SimpleFind(char* path, char** files, int fileCount); 
-void RecursiveFind(char* path, char** files, int fileCount); 
 
 int isDirectory(const char *path) {
    struct stat statbuf;
@@ -71,18 +57,7 @@ int main(int argc, char*argv[]) {
         numFiles++;  
     }
 
-    if(flag_R)
-        RecursiveFind(path, files, numFiles);
-    else
-        SimpleFind(path, files, numFiles);
-
-    // // Output-Test
-    // if(flag_i) printf("-i : case-insensitive search\n");
-    // if(flag_R) printf("-R : recursive search\n"); 
-    // printf("path: %s\n", path); 
-    // for(int i = 0; i < numFiles; i++){
-    //     printf("%d - %s\n", i, files[i]); 
-    // }    
+    SimpleFind(path, files, numFiles);
 
     free(path); 
     free(*files); 
@@ -94,62 +69,47 @@ void PrintUsage(){
 }
 
 void SimpleFind(char* path, char** files, int fileCount){
+    char* nextPath = malloc(sizeof(path));
+    char* foundPath = malloc(sizeof(path));
     struct dirent *dirEntry; 
     DIR *dir; 
 
+    char asd[100]; 
+    printf("trying to open dir: %s\n", path);
+    printf("current wd: %s\n", getcwd(asd,100)); 
+
     if((dir = opendir(path)) == NULL){
         printf("Failed to open directory\n");
-        return;
+        return; 
     } 
+
+    printf("opened dir: %s\n", path);
 
     while((dirEntry = readdir(dir)) != NULL){
         // only check files
-        if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..") && dirEntry->d_type != DT_DIR){  
-            for(int i = 0; i < fileCount; i++){
-                //Check if flag -i is set
-                if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
-                    //Change to current directory  
-                    chdir(path); 
-                    char cwd[MAX_PATH]; 
-                    printf("<pid>: %s: %s\n", dirEntry->d_name, getcwd(cwd, MAX_PATH)); 
+        if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..")){ 
+            if(flag_R){
+                if(dirEntry->d_type == IS_DIR){
+                    strcpy(nextPath, dirEntry->d_name);
+
+                    SimpleFind(nextPath, files, fileCount);
                 }
             }
-        } 
-    } 
-    free(dir);
-    free(dirEntry);
-}
-
-void RecursiveFind(char* path, char** files, int fileCount){
-    struct dirent *dirEntry;
-    DIR *dir; 
-
-    if((dir = opendir(path)) == NULL){
-        printf("Failed to open directory\n");
-        return;
-    } 
-
-    while((dirEntry = readdir(dir)) != NULL){
-        // only check files
-        if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..")){  
-            if(dirEntry->d_type == DT_DIR){ 
-                strcpy(path, dirEntry->d_name); 
-                strcat(path, "/"); 
-
-                RecursiveFind(path, files, fileCount);   
-            }else{
+            if(dirEntry->d_type != IS_DIR){ 
                 for(int i = 0; i < fileCount; i++){
                     //Check if flag -i is set
                     if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
-                        //Change to current directory  
-                        chdir(path); 
+                        //Change to current directory 
+                        strcpy(foundPath, path);  
+                        chdir(foundPath); 
                         char cwd[MAX_PATH]; 
-                        printf("<pid>: %s: %s\n", dirEntry->d_name, getcwd(cwd, MAX_PATH)); 
+                        printf("\n<pid>: %s: %s\n\n", dirEntry->d_name, getcwd(cwd, MAX_PATH)); 
                     }
                 }
             }
         } 
-    } 
+    }
+
     free(dir);
     free(dirEntry);
 }
