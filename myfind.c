@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -14,8 +15,12 @@
 #define DT_DIR 4 //Redefine DT_DIR, to avoid red underlines
 #endif
 
+int flag_R = 0;
+int flag_i = 0; 
+
 void PrintUsage();
 void SimpleFind(char* path, char** files, int fileCount); 
+void RecursiveFind(char* path, char** files, int fileCount); 
 
 int isDirectory(const char *path) {
    struct stat statbuf;
@@ -26,9 +31,6 @@ int isDirectory(const char *path) {
 
 int main(int argc, char*argv[]) {
     int arg; 
-    int flag_R = 0;
-    int flag_i = 0;  
-
     char* path = malloc(argc* sizeof(char*)); //Path to Searchdirectory
     char** files = malloc(argc * sizeof(char*)); //Array of Filename strings
 
@@ -68,8 +70,11 @@ int main(int argc, char*argv[]) {
         numFiles++;  
     }
 
+    if(flag_R)
+        RecursiveFind(path, files, numFiles);
+    else
+        SimpleFind(path, files, numFiles);
 
-    SimpleFind(path, files, numFiles);
     // // Output-Test
     // if(flag_i) printf("-i : case-insensitive search\n");
     // if(flag_R) printf("-R : recursive search\n"); 
@@ -100,7 +105,8 @@ void SimpleFind(char* path, char** files, int fileCount){
         // only check files
         if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..") && dirEntry->d_type != DT_DIR){  
             for(int i = 0; i < fileCount; i++){
-                if(!strcmp(files[i], dirEntry->d_name)){
+                //Check if flag -i is set
+                if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
                     //Change to current directory  
                     chdir(path); 
                     char cwd[255]; 
@@ -111,4 +117,8 @@ void SimpleFind(char* path, char** files, int fileCount){
     } 
     free(dir);
     free(dirEntry);
+}
+
+void RecursiveFind(char* path, char** files, int fileCount){
+    
 }
