@@ -1,7 +1,7 @@
 #include "myfind.h"
 
 #define IS_DIR 4 // dirent.h DT_DIR not recognized
-#define MAX_PATH 255
+#define MAX_PATH 100000
 
 int flag_R = 0;
 int flag_i = 0; 
@@ -69,47 +69,54 @@ void PrintUsage(){
 }
 
 void SimpleFind(char* path, char** files, int fileCount){
-    char* nextPath = malloc(sizeof(path));
-    char* foundPath = malloc(sizeof(path));
+    char* nextPath = malloc(MAX_PATH);
     struct dirent *dirEntry; 
     DIR *dir; 
 
-    char asd[100]; 
-    printf("trying to open dir: %s\n", path);
-    printf("current wd: %s\n", getcwd(asd,100)); 
-
     if((dir = opendir(path)) == NULL){
-        printf("Failed to open directory\n");
+        printf("Failed to open directory: %s\n", path);
         return; 
     } 
-
-    printf("opened dir: %s\n", path);
-
     while((dirEntry = readdir(dir)) != NULL){
         // only check files
         if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..")){ 
             if(flag_R){
                 if(dirEntry->d_type == IS_DIR){
-                    strcpy(nextPath, dirEntry->d_name);
+                    strcpy(nextPath, path);
+                    if(nextPath[strlen(nextPath)+1] != "/")
+                        strcat(nextPath, "/");
+                    strcat(nextPath, dirEntry->d_name); 
 
                     SimpleFind(nextPath, files, fileCount);
+                }else{
+                    for(int i = 0; i < fileCount; i++){
+                        //Check if flag -i is set
+                        if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
+                            //Get current directory 
+                            char cwd[MAX_PATH];
+                            strcat(getcwd(cwd, MAX_PATH), "/");
+                            // strcat(cwd, path); 
+                            printf("<pid>: %s: %s\n", dirEntry->d_name, cwd); 
+                        }
+                    }
                 }
-            }
-            if(dirEntry->d_type != IS_DIR){ 
-                for(int i = 0; i < fileCount; i++){
-                    //Check if flag -i is set
-                    if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
-                        //Change to current directory 
-                        strcpy(foundPath, path);  
-                        chdir(foundPath); 
-                        char cwd[MAX_PATH]; 
-                        printf("\n<pid>: %s: %s\n\n", dirEntry->d_name, getcwd(cwd, MAX_PATH)); 
+            }else{
+                if(dirEntry->d_type != IS_DIR){ 
+                    for(int i = 0; i < fileCount; i++){
+                        //Check if flag -i is set
+                        if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
+                            //Get current directory 
+                            char cwd[MAX_PATH];
+                            strcat(getcwd(cwd, MAX_PATH), "/");
+                            // strcat(cwd, path); 
+                            printf("<pid>: %s: %s\n", dirEntry->d_name, cwd); 
+                        }
                     }
                 }
             }
         } 
     }
-
-    free(dir);
-    free(dirEntry);
+    closedir(dir);
+    free(dirEntry);  
+    free(nextPath);
 }
