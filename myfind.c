@@ -1,5 +1,4 @@
 #include "myfind.h"
-
 #define IS_DIR 4 // dirent.h DT_DIR not recognized
 #define MAX_PATH 100000
 
@@ -7,14 +6,7 @@ int flag_R = 0;
 int flag_i = 0; 
 
 void PrintUsage();
-void SimpleFind(char* path, char** files, int fileCount); 
-
-int isDirectory(const char *path) {
-   struct stat statbuf;
-   if (stat(path, &statbuf) != 0)
-       return 0;
-   return S_ISDIR(statbuf.st_mode);
-}
+void Find(char* path, char** files, int fileCount); 
 
 int main(int argc, char*argv[]) {
     int arg; 
@@ -41,8 +33,7 @@ int main(int argc, char*argv[]) {
         } 
     }
 
-    // falsche Anzahl an Optionen 
-    if (argc<optind+2) { 
+    if (argc<optind+2) { // Invalid number of arguments
         PrintUsage();
     }
 
@@ -57,7 +48,7 @@ int main(int argc, char*argv[]) {
         numFiles++;  
     }
 
-    SimpleFind(path, files, numFiles);
+    Find(path, files, numFiles);
 
     free(path); 
     free(*files); 
@@ -68,7 +59,7 @@ void PrintUsage(){
     printf("Invalid arguments, please use:\n\tmyfind [-R] [-i] <path> <file1> <file2> ... <fileN>\n"); 
 }
 
-void SimpleFind(char* path, char** files, int fileCount){
+void Find(char* path, char** files, int fileCount){
     char* nextPath = malloc(MAX_PATH);
     struct dirent *dirEntry; 
     DIR *dir; 
@@ -80,19 +71,19 @@ void SimpleFind(char* path, char** files, int fileCount){
     while((dirEntry = readdir(dir)) != NULL){
         // only check files
         if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..")){ 
+            // Check if flag -R is set
             if(flag_R){
                 if(dirEntry->d_type == IS_DIR){
                     strcpy(nextPath, path);
                     if(nextPath[strlen(nextPath)+1] != '/')
                         strcat(nextPath, "/");
                     strcat(nextPath, dirEntry->d_name); 
-
-                    SimpleFind(nextPath, files, fileCount);
+                    Find(nextPath, files, fileCount); // Recursively search in subfolders
                 }
             }
             if(dirEntry->d_type != IS_DIR){ 
                 for(int i = 0; i < fileCount; i++){
-                    //Check if flag -i is set
+                    // Check if flag -i is set
                     if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
                         //Get path to found file
                         char cwd[MAX_PATH];
