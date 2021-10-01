@@ -74,7 +74,7 @@ void SimpleFind(char* path, char** files, int fileCount){
     DIR *dir; 
 
     if((dir = opendir(path)) == NULL){
-        printf("Failed to open directory: %s\n", path);
+        // fprintf(stderr, "Failed to open directory: %s\n", path);
         return; 
     } 
     while((dirEntry = readdir(dir)) != NULL){
@@ -83,40 +83,27 @@ void SimpleFind(char* path, char** files, int fileCount){
             if(flag_R){
                 if(dirEntry->d_type == IS_DIR){
                     strcpy(nextPath, path);
-                    if(nextPath[strlen(nextPath)+1] != "/")
+                    if(nextPath[strlen(nextPath)+1] != '/')
                         strcat(nextPath, "/");
                     strcat(nextPath, dirEntry->d_name); 
 
                     SimpleFind(nextPath, files, fileCount);
-                }else{
-                    for(int i = 0; i < fileCount; i++){
-                        //Check if flag -i is set
-                        if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
-                            //Get current directory 
-                            char cwd[MAX_PATH];
-                            strcat(getcwd(cwd, MAX_PATH), "/");
-                            // strcat(cwd, path); 
-                            printf("<pid>: %s: %s\n", dirEntry->d_name, cwd); 
-                        }
-                    }
                 }
-            }else{
-                if(dirEntry->d_type != IS_DIR){ 
-                    for(int i = 0; i < fileCount; i++){
-                        //Check if flag -i is set
-                        if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
-                            //Get current directory 
-                            char cwd[MAX_PATH];
-                            strcat(getcwd(cwd, MAX_PATH), "/");
-                            // strcat(cwd, path); 
-                            printf("<pid>: %s: %s\n", dirEntry->d_name, cwd); 
-                        }
+            }
+            if(dirEntry->d_type != IS_DIR){ 
+                for(int i = 0; i < fileCount; i++){
+                    //Check if flag -i is set
+                    if(flag_i ? (!strncasecmp(files[i], dirEntry->d_name, sizeof(files))) : (!strcmp(files[i], dirEntry->d_name))){
+                        //Get path to found file
+                        char cwd[MAX_PATH];
+                        realpath(path, cwd);
+                        printf("<pid>: %s: %s\n", dirEntry->d_name, cwd); 
                     }
                 }
             }
         } 
     }
     closedir(dir);
-    free(dirEntry);  
-    free(nextPath);
+    free(dirEntry); 
+    free(nextPath); 
 }
