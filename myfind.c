@@ -1,6 +1,6 @@
 #include "myfind.h"
 #define IS_DIR 4 // dirent.h DT_DIR not recognized
-#define MAX_PATH 100000
+#define MAX_PATH 10000
 
 int flag_R = 0;
 int flag_i = 0; 
@@ -62,13 +62,13 @@ void PrintUsage(){
 void Find(char* path, char** files, int fileCount){
     char* nextPath = malloc(MAX_PATH);
     struct dirent *dirEntry; 
-    DIR *dir; 
+    DIR *dir = opendir(path); 
 
-    if((dir = opendir(path)) == NULL){
-        // fprintf(stderr, "Failed to open directory: %s\n", path);
+    if(!dir){
+        // fprintf(stderr, "%s: %s\n", path, strerror(errno));
         return; 
     } 
-    while((dirEntry = readdir(dir)) != NULL){
+    while((dirEntry = readdir(dir))){
         // only check files
         if(strcmp(dirEntry->d_name, ".") && strcmp(dirEntry->d_name, "..")){ 
             // Check if flag -R is set
