@@ -1,5 +1,6 @@
 #include "myfind.h"
 #define IS_DIR 4 // dirent.h DT_DIR not recognized
+#define STRING_MAX 4294967291
 
 int flag_R = 0;
 int flag_i = 0; 
@@ -77,7 +78,7 @@ void PrintUsage(){
 }
 
 void Find(char* path, char* file){
-    char* nextPath = malloc(CHAR_MAX);
+    char* nextPath = malloc(STRING_MAX);
     struct dirent *dirEntry; 
     DIR *dir = opendir(path); 
 
