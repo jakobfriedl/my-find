@@ -12,25 +12,24 @@ int main(int argc, char*argv[]) {
     int arg; 
     int status; 
     char* path = malloc(argc * sizeof(char*)); //Path to Searchdirectory
-    char** files = malloc(argc * sizeof(char*)); //Array of Filename strings
 
     while ((arg = getopt(argc, argv, "Ri")) != EOF){
         switch(arg){
             case 'R':
                 if(flag_R){
                     PrintUsage();
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 } 
                 flag_R++; 
             break;
             case 'i':
                 if(flag_i){
                     PrintUsage();
-                    exit(-1);
+                    exit(EXIT_FAILURE);
                 } 
                 flag_i++; 
             break; 
-            default: exit(-1);
+            default: exit(EXIT_FAILURE);
         } 
     }
 
@@ -38,18 +37,10 @@ int main(int argc, char*argv[]) {
         PrintUsage();
     }
 
-    int numFiles = -1; 
-    for(; optind < argc; optind++) {
-        if(numFiles == -1){
-            strcpy(path, argv[optind]); 
-        }else{
-            files[numFiles] = malloc(strlen(argv[optind])+1);
-            strcpy(files[numFiles], argv[optind]);
-        }
-        numFiles++;  
-    }
+    strcpy(path, argv[optind]); // set path variable
+    optind++;
 
-    for(int i = 0; i < numFiles; i++){
+    for(; optind < argc; optind++){
         pid_t pid; 
         switch(pid = fork()){
             case -1: 
@@ -57,7 +48,7 @@ int main(int argc, char*argv[]) {
                 exit(EXIT_FAILURE);
                 break; 
             case 0: 
-                Find(path, files[i]);
+                Find(path, argv[optind]);
                 return EXIT_SUCCESS;
                 break; 
             default:
@@ -69,7 +60,6 @@ int main(int argc, char*argv[]) {
     }
 
     free(path); 
-    free(*files); 
     return EXIT_SUCCESS; 
 }
 
