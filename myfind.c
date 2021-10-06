@@ -1,74 +1,79 @@
 #include "myfind.h"
-#define IS_DIR 4 // dirent.h DT_DIR not recognized
-#define STRING_MAX 4294967291
+#define IS_DIR 4 // dirent.h DT_DIR not recognized in WSL 
 
 int flag_R = 0;
 int flag_i = 0; 
 
 void PrintUsage();
-void Find(char* path, char* file); 
+void Find(char* path, char* file);  
 
 int main(int argc, char*argv[]) {
     int arg; 
     int status; 
-    char* path = malloc(argc * sizeof(char*)); //Path to Searchdirectory
+    int counter = 0; 
+    char* path = malloc(PATH_MAX); //Path to Searchdirectory
 
     while ((arg = getopt(argc, argv, "Ri")) != EOF){
         switch(arg){
             case 'R':
                 if(flag_R){
                     PrintUsage();
-                    exit(EXIT_FAILURE);
+                    return EXIT_FAILURE;
                 } 
                 flag_R++; 
             break;
             case 'i':
                 if(flag_i){
                     PrintUsage();
-                    exit(EXIT_FAILURE);
+                    return EXIT_FAILURE;
                 } 
                 flag_i++; 
             break; 
-            default: exit(EXIT_FAILURE);
+            default: return EXIT_FAILURE;
         } 
     }
 
     if (argc<optind+2) { // Invalid number of arguments
         PrintUsage();
+        return EXIT_FAILURE; 
     }
 
     strcpy(path, argv[optind]); // set path variable
     optind++;
 
     for(; optind < argc; optind++){
-        pid_t pid; 
-        switch(pid = fork()){
+        switch(fork()){
             case -1: 
-                printf("Error, could not start child process.\n"); 
-                exit(EXIT_FAILURE);
+                fprintf(stderr, "Error, could not start child process.\n"); 
+                return EXIT_FAILURE;
                 break; 
             case 0: 
+                counter++; 
                 Find(path, argv[optind]);
                 return EXIT_SUCCESS;
                 break; 
             default:
                 break; 
         }
-        if(pid){
-            pid = wait(&status); // wait for other processes to finish
-        }
     }
+
+    // Wait for processes to finish
+    // TODO: Change wait to collect all child processes
+    while(counter > 0){
+        wait(&status); 
+        counter--; 
+    } 
 
     free(path); 
     return EXIT_SUCCESS; 
 }
 
 void PrintUsage(){
-    printf("Invalid arguments, please use:\n\tmyfind [-R] [-i] <path> <file1> <file2> ... <fileN>\n"); 
+    fprintf(stderr, "Invalid arguments, please use:\n\tmyfind [-R] [-i] <path> <file1> <file2> ... <fileN>\n"); 
 }
 
 void Find(char* path, char* file){
-    char* nextPath = malloc(STRING_MAX);
+    char* nextPath = malloc(PATH_MAX);
     struct dirent *dirEntry; 
     DIR *dir = opendir(path); 
 
@@ -92,9 +97,9 @@ void Find(char* path, char* file){
                 // Check if flag -i is set
                 if(flag_i ? (!strncasecmp(file, dirEntry->d_name, sizeof(char*))) : (!strcmp(file, dirEntry->d_name))){
                     //Get path to found file
-                    char cwd[CHAR_MAX];
+                    char cwd[PATH_MAX];
                     realpath(path, cwd);
-                    printf("%d: %s: %s\n", getpid(), dirEntry->d_name, cwd); 
+                    fprintf(stdout, "%d: %s: %s\n", getpid(), dirEntry->d_name, cwd); 
                 }
             }
         } 

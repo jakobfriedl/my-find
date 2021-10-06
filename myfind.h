@@ -10,4 +10,3 @@
 #include <wait.h>
 #include <dirent.h>
 #include <errno.h>
-#include <signal.h>
