@@ -8,9 +8,7 @@ void PrintUsage();
 void Find(char* path, char* file);  
 
 int main(int argc, char*argv[]) {
-    int arg; 
-    int status; 
-    int counter = 0; 
+    int arg, status; 
     char* path = malloc(PATH_MAX); //Path to Searchdirectory
 
     while ((arg = getopt(argc, argv, "Ri")) != EOF){
@@ -46,23 +44,14 @@ int main(int argc, char*argv[]) {
             case -1: 
                 fprintf(stderr, "Error, could not start child process.\n"); 
                 return EXIT_FAILURE;
-                break; 
             case 0: 
-                counter++; 
                 Find(path, argv[optind]);
                 return EXIT_SUCCESS;
-                break; 
             default:
                 break; 
         }
     }
-
-    // Wait for processes to finish
-    // TODO: Change wait to collect all child processes
-    while(counter > 0){
-        wait(&status); 
-        counter--; 
-    } 
+    while (wait(&status) > 0); // Wait for processes to finish
 
     free(path); 
     return EXIT_SUCCESS; 
@@ -103,8 +92,7 @@ void Find(char* path, char* file){
                 }
             }
         } 
-    }
-    closedir(dir);
+    } closedir(dir);
     free(dirEntry); 
     free(nextPath); 
 }
