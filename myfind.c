@@ -11,7 +11,7 @@ void Find(char* path, char* file);
 
 int main(int argc, char*argv[]) {
     int arg, status; 
-    char* path = malloc(PATH_MAX); //Path to Searchdirectory
+    char* path = malloc(PATH_MAX); // Variable to store search-directory
 
     while ((arg = getopt(argc, argv, "Ri")) != EOF){
         switch(arg){
@@ -38,15 +38,15 @@ int main(int argc, char*argv[]) {
         return EXIT_FAILURE; 
     }
 
-    strcpy(path, argv[optind]); // set path variable
+    strcpy(path, argv[optind]); // Set path variable
     optind++;
 
-    for(; optind < argc; optind++){
-        switch(fork()){
+    for(; optind < argc; optind++){ // Parallel search for all input-files
+        switch(fork()){  
             case -1: 
                 fprintf(stderr, "Error, could not start child process.\n"); 
                 return EXIT_FAILURE;
-            case 0: 
+            case 0: // Start childprocess for file and search for it
                 Find(path, argv[optind]);
                 return EXIT_SUCCESS;
             default:
@@ -87,7 +87,7 @@ void Find(char* path, char* file){
             if(dirEntry->d_type != IS_DIR){ 
                 // Check if flag -i is set
                 if(flag_i ? (!strncasecmp(file, dirEntry->d_name, sizeof(char*))) : (!strcmp(file, dirEntry->d_name))){
-                    //Get path to found file
+                    // Get path to found file
                     char cwd[PATH_MAX];
                     realpath(path, cwd);
                     fprintf(stdout, "%d: %s: %s/%s\n", getpid(), dirEntry->d_name, cwd, dirEntry->d_name); 
