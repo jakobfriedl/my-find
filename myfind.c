@@ -1,3 +1,5 @@
+//* MyFind implemented by Philipp Haider (if20b097) & Jakob Friedl (if20b089) - VERTS WS2021
+
 #include "myfind.h"
 #define IS_DIR 4 // dirent.h DT_DIR not recognized in WSL 
 
@@ -88,7 +90,7 @@ void Find(char* path, char* file){
                     //Get path to found file
                     char cwd[PATH_MAX];
                     realpath(path, cwd);
-                    fprintf(stdout, "%d: %s: %s\n", getpid(), dirEntry->d_name, cwd); 
+                    fprintf(stdout, "%d: %s: %s/%s\n", getpid(), dirEntry->d_name, cwd, dirEntry->d_name); 
                 }
             }
         } 
